@@ -3,7 +3,7 @@ Configuración Base de Datos - Sistema ACEES Group
 Configuración para MongoDB y Redis
 """
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from urllib.parse import urlparse
 import logging
 

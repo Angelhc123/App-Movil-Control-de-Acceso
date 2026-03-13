@@ -1918,7 +1918,10 @@ const RecomendacionBusSchema = new mongoose.Schema({
 const RecomendacionBus = mongoose.model('recomendaciones_buses', RecomendacionBusSchema);
 
 // ==================== ML PYTHON PROXY (REEMPLAZO DE ML JS) ====================
-const ML_PYTHON_BASE_URL = process.env.ML_PYTHON_BASE_URL || 'http://localhost:8000';
+const RAW_ML_PYTHON_BASE_URL = process.env.ML_PYTHON_BASE_URL || 'http://localhost:8000';
+const ML_PYTHON_BASE_URL = /^https?:\/\//i.test(RAW_ML_PYTHON_BASE_URL)
+  ? RAW_ML_PYTHON_BASE_URL
+  : `https://${RAW_ML_PYTHON_BASE_URL}`;
 const ML_PROXY_TIMEOUT_MS = parseInt(process.env.ML_PROXY_TIMEOUT_MS || '15000', 10);
 
 function mapMlPathToPython(pathname) {

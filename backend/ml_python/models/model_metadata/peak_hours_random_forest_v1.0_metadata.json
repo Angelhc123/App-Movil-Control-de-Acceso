@@ -1,0 +1,8 @@
+{
+  "model_name": "peak_hours",
+  "model_type": "random_forest", 
+  "version": "v1.0",
+  "timestamp": "2026-03-12T10:00:00.000Z",
+  "metrics": {"accuracy": 0.85},
+  "training_params": {"n_estimators": 100}
+}

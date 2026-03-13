@@ -18,6 +18,17 @@ class MLLoggingConfig:
     def __init__(self):
         # ======== CONFIGURACIÓN BÁSICA ========
         self.LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+
+def setup_logging(name: str = "ml_python") -> None:
+    """Setup basic logging configuration."""
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+def get_logger(name: str) -> logging.Logger:
+    """Get a logger instance."""
+    return logging.getLogger(name)
         self.ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
         self.LOG_DIR = Path(os.getenv('LOG_DIR', './logs'))
         

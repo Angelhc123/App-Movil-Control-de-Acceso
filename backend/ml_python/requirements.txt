@@ -11,7 +11,8 @@ seaborn==0.12.2          # Visualizaciones estadísticas
 # 🌐 API & Web Framework 
 fastapi==0.101.0         # API REST alta performance
 uvicorn==0.23.0          # ASGI server producción
-pydantic==2.1.0          # Validación datos automática
+pydantic==2.4.2          # Validación datos automática
+pydantic-settings==2.0.3 # Configuración BaseSettings (pydantic v2)
 redis==4.6.0             # Cache y rate limiting
 celery==5.3.0            # Jobs asíncronos y scheduled tasks
 

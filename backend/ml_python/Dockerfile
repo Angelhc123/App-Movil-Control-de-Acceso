@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
+    libgomp1 \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear directorio de trabajo

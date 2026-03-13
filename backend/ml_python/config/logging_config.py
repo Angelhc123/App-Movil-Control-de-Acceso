@@ -18,17 +18,6 @@ class MLLoggingConfig:
     def __init__(self):
         # ======== CONFIGURACIÓN BÁSICA ========
         self.LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
-
-def setup_logging(name: str = "ml_python") -> None:
-    """Setup basic logging configuration."""
-    logging.basicConfig(
-        level=os.getenv("LOG_LEVEL", "INFO"),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-def get_logger(name: str) -> logging.Logger:
-    """Get a logger instance."""
-    return logging.getLogger(name)
         self.ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
         self.LOG_DIR = Path(os.getenv('LOG_DIR', './logs'))
         
@@ -416,6 +405,17 @@ class JSONFormatter(logging.Formatter):
 
 # Instancia global de configuración logging
 logging_config = MLLoggingConfig()
+
+def setup_logging(name: str = "ml_python") -> None:
+    """
+    Setup logging configuration.
+    Configuration is handled by the global MLLoggingConfig instance.
+    """
+    pass
+
+def get_logger(name: str) -> logging.Logger:
+    """Get a logger instance."""
+    return logging_config.get_logger(name)
 
 def get_ml_logger(name: str) -> logging.Logger:
     """Obtener logger ML configurado"""

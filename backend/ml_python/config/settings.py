@@ -3,6 +3,7 @@ Application settings and configuration management.
 """
 
 import os
+import json
 from typing import List, Optional, Any, Dict
 from functools import lru_cache
 from pydantic import Field, validator
@@ -104,6 +105,34 @@ class Settings(BaseSettings):
         if v.upper() not in valid_levels:
             raise ValueError(f'LOG_LEVEL must be one of: {valid_levels}')
         return v.upper()
+
+    @validator('ALLOWED_HOSTS', 'CORS_ORIGINS', pre=True)
+    def normalize_list_settings(cls, v):
+        """Normalize list-like env vars and avoid empty host/origin entries."""
+        if v is None:
+            return ['*']
+
+        # Handle JSON string values like "[\"*\"]" or "[\"\"]"
+        if isinstance(v, str):
+            raw = v.strip()
+            if not raw:
+                return ['*']
+
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    cleaned = [str(item).strip() for item in parsed if str(item).strip()]
+                    return cleaned or ['*']
+            except Exception:
+                # Fallback for comma-separated values
+                cleaned = [item.strip() for item in raw.split(',') if item.strip()]
+                return cleaned or ['*']
+
+        if isinstance(v, list):
+            cleaned = [str(item).strip() for item in v if str(item).strip()]
+            return cleaned or ['*']
+
+        return ['*']
     
     @validator('ENVIRONMENT')
     def validate_environment(cls, v):

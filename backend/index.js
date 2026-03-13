@@ -1917,6 +1917,64 @@ const RecomendacionBusSchema = new mongoose.Schema({
 }, { collection: 'recomendaciones_buses', strict: false, _id: false });
 const RecomendacionBus = mongoose.model('recomendaciones_buses', RecomendacionBusSchema);
 
+// ==================== ML PYTHON PROXY (REEMPLAZO DE ML JS) ====================
+const ML_PYTHON_BASE_URL = process.env.ML_PYTHON_BASE_URL || 'http://localhost:8000';
+const ML_PROXY_TIMEOUT_MS = parseInt(process.env.ML_PROXY_TIMEOUT_MS || '15000', 10);
+
+function mapMlPathToPython(pathname) {
+  if (pathname === '/status') return '/api/v1/monitoring/status';
+  if (pathname === '/bus-recommendations') return '/api/v1/predictions/bus-recommendations';
+  if (pathname.startsWith('/prediction/')) {
+    return '/api/v1/predictions/' + pathname.replace('/prediction/', '');
+  }
+  if (pathname.startsWith('/monitoring/')) {
+    return '/api/v1/monitoring/' + pathname.replace('/monitoring/', '');
+  }
+  return '/api/v1/ml' + pathname;
+}
+
+async function proxyToMlPython(req, res) {
+  const targetPath = mapMlPathToPython(req.path);
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  const targetUrl = `${ML_PYTHON_BASE_URL}${targetPath}${query}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ML_PROXY_TIMEOUT_MS);
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
+
+    const response = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body: hasBody ? JSON.stringify(req.body || {}) : undefined,
+      signal: controller.signal
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    clearTimeout(timeout);
+
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    }
+
+    const text = await response.text();
+    return res.status(response.status).send(text);
+  } catch (error) {
+    clearTimeout(timeout);
+    return res.status(502).json({
+      error: 'ML Python service unavailable',
+      details: error.message,
+      target: targetUrl
+    });
+  }
+}
+
+// Intercepta todas las rutas /ml/* y las redirige al servicio ML Python
+app.use('/ml', proxyToMlPython);
+
 // 🔍 ENDPOINT 1: Obtener datos históricos para el modelo ML
 app.get('/ml/datos-historicos', async (req, res) => {
   try {
@@ -2349,666 +2407,7 @@ function calcularTiempoPromedio(estudiantesPresentes) {
 }
 
 // ==================== ENDPOINTS MACHINE LEARNING ====================
-
-// Importar servicios ML
-const MLETLService = require('./ml/ml_etl_service');
-const PeakHoursPredictiveModel = require('./ml/peak_hours_predictive_model');
-const CongestionAlertSystem = require('./ml/congestion_alert_system');
-const DatasetCollector = require('./ml/dataset_collector');
-const WeeklyModelUpdateService = require('./ml/weekly_model_update_service');
-
-// Inicializar servicios ML
-let etlService = null;
-let peakModel = null;
-let alertSystem = null;
-let datasetCollector = null;
-let updateService = null;
-
-// Función para inicializar servicios ML
-async function initializeMLServices() {
-  try {
-    etlService = new MLETLService(Asistencia);
-    peakModel = new PeakHoursPredictiveModel(Asistencia);
-    alertSystem = new CongestionAlertSystem(Asistencia);
-    datasetCollector = new DatasetCollector(Asistencia);
-    updateService = new WeeklyModelUpdateService(Asistencia);
-    
-    await alertSystem.initialize();
-    await updateService.initialize();
-    console.log('🤖 Servicios ML inicializados correctamente');
-  } catch (error) {
-    console.error('❌ Error inicializando servicios ML:', error.message);
-  }
-}
-
-// DATASET ENDPOINTS
-app.post('/ml/dataset/collect', async (req, res) => {
-  try {
-    if (!datasetCollector) {
-      return res.status(500).json({ error: 'Servicio ML no inicializado' });
-    }
-    
-    const { months = 3, outputFormat = 'json' } = req.body;
-    const result = await datasetCollector.collectHistoricalDataset({ months, outputFormat });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/dataset/validate', async (req, res) => {
-  try {
-    if (!datasetCollector) {
-      return res.status(500).json({ error: 'Servicio ML no inicializado' });
-    }
-    
-    const validation = await datasetCollector.validateDatasetAvailability();
-    res.json(validation);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/dataset/statistics', async (req, res) => {
-  try {
-    if (!datasetCollector) {
-      return res.status(500).json({ error: 'Servicio ML no inicializado' });
-    }
-    
-    const stats = await datasetCollector.getDatasetStatistics();
-    res.json(stats);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ETL ENDPOINTS
-app.post('/ml/etl/run-pipeline', async (req, res) => {
-  try {
-    if (!etlService) {
-      return res.status(500).json({ error: 'Servicio ETL no inicializado' });
-    }
-    
-    const { months = 3, validateData = true, cleanData = true } = req.body;
-    const result = await etlService.runETLPipeline({ months, validateData, cleanData });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// PREDICTION ENDPOINTS
-app.post('/ml/prediction/peak-hours/train', async (req, res) => {
-  try {
-    if (!peakModel) {
-      return res.status(500).json({ error: 'Modelo predictivo no inicializado' });
-    }
-    
-    const { months = 3, testSize = 0.2 } = req.body;
-    const result = await peakModel.trainPeakHoursModel({ months, testSize });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/prediction/peak-hours/next-24h', async (req, res) => {
-  try {
-    if (!peakModel) {
-      return res.status(500).json({ error: 'Modelo predictivo no inicializado' });
-    }
-    
-    const predictions = await peakModel.predictNext24Hours();
-    res.json(predictions);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// RECOMMENDATIONS FOR BUSES (VERSIÓN SIMPLIFICADA - SIN ML)
-app.get('/ml/bus-recommendations', async (req, res) => {
-  try {
-    const capacidadBus = 50; // Capacidad fija de cada bus
-    
-    // Analizar asistencias de las últimas 4 semanas
-    const fechaLimite = new Date();
-    fechaLimite.setDate(fechaLimite.getDate() - 28); // 4 semanas
-    
-    // Agrupar asistencias por hora
-    const asistenciasPorHora = await Asistencia.aggregate([
-      {
-        $match: {
-          fecha_hora: { $exists: true }
-        }
-      },
-      {
-        $addFields: {
-          fechaObj: { $toDate: "$fecha_hora" }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            hora: { $hour: "$fechaObj" },
-            tipo: "$tipo"
-          },
-          cantidad: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { "_id.hora": 1 }
-      }
-    ]);
-    
-    // Crear resumen por hora (0-23)
-    const horarios = [];
-    for (let hora = 6; hora <= 20; hora++) {
-      const entradas = asistenciasPorHora.find(
-        a => a._id.hora === hora && a._id.tipo === 'entrada'
-      )?.cantidad || 0;
-      
-      const salidas = asistenciasPorHora.find(
-        a => a._id.hora === hora && a._id.tipo === 'salida'
-      )?.cantidad || 0;
-      
-      const total = entradas + salidas;
-      const busesRecomendados = Math.ceil(total / capacidadBus);
-      
-      horarios.push({
-        hora: hora,
-        entradas: entradas,
-        salidas: salidas,
-        total: total,
-        buses_recomendados: busesRecomendados,
-        es_hora_pico: total > (capacidadBus * 2) // Más de 2 buses
-      });
-    }
-    
-    // Asegurar que siempre haya datos
-    if (horarios.length === 0) {
-      return res.json({
-        success: true,
-        capacidad_por_bus: capacidadBus,
-        periodo_analizado: "Sin datos suficientes",
-        horarios: [],
-        resumen: {
-          hora_mas_congestionada: null,
-          buses_maximos_requeridos: 0
-        },
-        mensaje: "No hay suficientes datos de asistencias para generar recomendaciones"
-      });
-    }
-    
-    res.json({
-      success: true,
-      capacidad_por_bus: capacidadBus,
-      periodo_analizado: "Últimas 4 semanas",
-      horarios: horarios,
-      resumen: {
-        hora_mas_congestionada: horarios.reduce((max, h) => h.total > max.total ? h : max, horarios[0]),
-        buses_maximos_requeridos: Math.max(...horarios.map(h => h.buses_recomendados))
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Error generando recomendaciones:', error);
-    res.status(500).json({ 
-      error: error.message,
-      details: 'Error al analizar datos de asistencias',
-      horarios: [] // Asegurar que siempre retorne un array
-    });
-  }
-});
-
-// GENERATE TEST DATA ENDPOINT
-app.post('/ml/generate-test-data', async (req, res) => {
-  try {
-    const { days = 120, recordsPerDay = 50 } = req.body;
-    
-    console.log('🎲 Generando datos de prueba...');
-    
-    // Generar datos de prueba
-    const testData = [];
-    const facultades = ['Ingeniería', 'Ciencias', 'Medicina', 'Derecho', 'Administración'];
-    const carreras = {
-      'Ingeniería': ['Sistemas', 'Civil', 'Industrial', 'Electrónica'],
-      'Ciencias': ['Matemáticas', 'Física', 'Química', 'Biología'],
-      'Medicina': ['Medicina General', 'Enfermería', 'Odontología'],
-      'Derecho': ['Derecho', 'Ciencias Políticas'],
-      'Administración': ['Administración', 'Contabilidad', 'Marketing']
-    };
-    const puertas = ['Puerta A', 'Puerta B', 'Puerta C', 'Puerta Principal'];
-    const nombres = [
-      'Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez',
-      'Luis Rodríguez', 'Elena Fernández', 'Diego Silva', 'Carmen Ruiz'
-    ];
-
-    const alumnoIds = [];
-    for (let i = 0; i < 50; i++) {
-      alumnoIds.push(new mongoose.Types.ObjectId());
-    }
-
-    for (let day = 0; day < days; day++) {
-      const fecha = new Date(Date.now() - (day * 24 * 60 * 60 * 1000));
-      
-      // Skip some weekends
-      if (fecha.getDay() === 0 || fecha.getDay() === 6) {
-        if (Math.random() > 0.3) continue;
-      }
-
-      const dailyRecords = Math.floor(Math.random() * recordsPerDay) + 20;
-      
-      for (let i = 0; i < dailyRecords; i++) {
-        const peakHours = [7, 8, 9, 12, 13, 14, 17, 18, 19];
-        const normalHours = [10, 11, 15, 16, 20];
-        const hour = Math.random() < 0.7 
-          ? peakHours[Math.floor(Math.random() * peakHours.length)]
-          : normalHours[Math.floor(Math.random() * normalHours.length)];
-        const minute = Math.floor(Math.random() * 60);
-        
-        const facultad = facultades[Math.floor(Math.random() * facultades.length)];
-        
-        testData.push({
-          alumno_id: alumnoIds[Math.floor(Math.random() * alumnoIds.length)],
-          nombre_completo: nombres[Math.floor(Math.random() * nombres.length)],
-          carrera: carreras[facultad][Math.floor(Math.random() * carreras[facultad].length)],
-          facultad,
-          fecha,
-          hora: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-          tipo: Math.random() > 0.5 ? 'entrada' : 'salida',
-          puerta: puertas[Math.floor(Math.random() * puertas.length)],
-          metodo_acceso: 'NFC'
-        });
-      }
-    }
-
-    // Insertar datos
-    await Asistencia.insertMany(testData);
-    
-    const totalCount = await Asistencia.countDocuments();
-    const entradaCount = await Asistencia.countDocuments({ tipo: 'entrada' });
-    const salidaCount = await Asistencia.countDocuments({ tipo: 'salida' });
-
-    res.json({
-      success: true,
-      message: 'Datos de prueba generados exitosamente',
-      generated: testData.length,
-      totals: {
-        total: totalCount,
-        entradas: entradaCount,
-        salidas: salidaCount
-      }
-    });
-  } catch (error) {
-    console.error('❌ Error generando datos:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DEBUG: Verificar datos en BD
-app.get('/ml/debug/data-count', async (req, res) => {
-  try {
-    const totalAsistencias = await Asistencia.countDocuments();
-    const entradas = await Asistencia.countDocuments({ tipo: 'entrada' });
-    const salidas = await Asistencia.countDocuments({ tipo: 'salida' });
-    
-    // Verificar datos recientes (últimos 90 días)
-    const fechaInicio = new Date();
-    fechaInicio.setMonth(fechaInicio.getMonth() - 3);
-    
-    const recentTotal = await Asistencia.countDocuments({
-      fecha_hora: { $gte: fechaInicio }
-    });
-    
-    const recentEntradas = await Asistencia.countDocuments({
-      fecha_hora: { $gte: fechaInicio },
-      tipo: 'entrada'
-    });
-    
-    const recentSalidas = await Asistencia.countDocuments({
-      fecha_hora: { $gte: fechaInicio },
-      tipo: 'salida'
-    });
-
-    // Mostrar algunos ejemplos
-    const ejemplos = await Asistencia.find()
-      .limit(5)
-      .select('fecha_hora tipo siglas_facultad siglas_escuela');
-
-    res.json({
-      success: true,
-      data: {
-        total: {
-          asistencias: totalAsistencias,
-          entradas: entradas,
-          salidas: salidas
-        },
-        recent3Months: {
-          total: recentTotal,
-          entradas: recentEntradas,
-          salidas: recentSalidas,
-          fechaInicio: fechaInicio.toISOString()
-        },
-        ejemplos: ejemplos
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DEBUG: VERIFICAR DATOS DE LA BD
-app.get('/ml/debug/verificar-datos', async (req, res) => {
-  try {
-    // Contar todos los registros
-    const totalAsistencias = await Asistencia.countDocuments();
-    
-    // Contar por tipo
-    const entradas = await Asistencia.countDocuments({ tipo: 'entrada' });
-    const salidas = await Asistencia.countDocuments({ tipo: 'salida' });
-    
-    // Contar registros recientes (últimos 3 meses)
-    const fechaLimite = new Date();
-    fechaLimite.setMonth(fechaLimite.getMonth() - 3);
-    const fechaLimiteISO = fechaLimite.toISOString();
-    
-    const recientes = await Asistencia.countDocuments({
-      fecha_hora: { $gte: fechaLimiteISO }
-    });
-    
-    // Obtener algunos ejemplos
-    const ejemplos = await Asistencia.find().limit(3);
-    
-    // Verificar estructura de fechas (simplificado)
-    const fechaStats = await Asistencia.aggregate([
-      {
-        $project: {
-          fecha_hora: 1,
-          tipo: 1,
-          fecha_tipo: { $type: "$fecha_hora" }
-        }
-      },
-      {
-        $group: {
-          _id: "$fecha_tipo",
-          count: { $sum: 1 },
-          ejemplos: { $push: "$fecha_hora" }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          count: 1,
-          ejemplos: { $slice: ["$ejemplos", 3] }
-        }
-      }
-    ]);
-
-    res.json({
-      success: true,
-      datos: {
-        total_asistencias: totalAsistencias,
-        entradas: entradas,
-        salidas: salidas,
-        recientes_3_meses: recientes,
-        fecha_limite_consulta: fechaLimiteISO,
-        tipos_de_fecha: fechaStats,
-        ejemplos_registros: ejemplos.map(a => ({
-          _id: a._id,
-          tipo: a.tipo,
-          fecha_hora: a.fecha_hora,
-          nombre: a.nombre,
-          siglas_facultad: a.siglas_facultad,
-          siglas_escuela: a.siglas_escuela
-        }))
-      }
-    });
-  } catch (error) {
-    console.error('❌ Error verificando datos:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// AUTO-TRAIN MODEL IF NOT TRAINED (simplified endpoint)
-app.post('/ml/bus-recommendations/auto-train', async (req, res) => {
-  try {
-    if (!peakModel) {
-      return res.status(500).json({ error: 'Modelo predictivo no inicializado' });
-    }
-
-    console.log('🚀 Iniciando entrenamiento automático del modelo...');
-    
-    // Primero verificar datos disponibles
-    const totalAsistencias = await Asistencia.countDocuments();
-    const entradas = await Asistencia.countDocuments({ tipo: 'entrada' });
-    const salidas = await Asistencia.countDocuments({ tipo: 'salida' });
-    
-    console.log(`📊 Total asistencias: ${totalAsistencias}`);
-    console.log(`📊 Entradas: ${entradas}, Salidas: ${salidas}`);
-    
-    if (totalAsistencias < 50) {
-      return res.status(400).json({ 
-        error: `Datos insuficientes: solo ${totalAsistencias} registros. Se necesitan al menos 50.`,
-        totalAsistencias,
-        entradas,
-        salidas
-      });
-    }
-    
-    const result = await peakModel.trainPeakHoursModel({ months: 3, testSize: 0.2 });
-    
-    res.json({
-      success: true,
-      message: 'Modelo entrenado exitosamente',
-      dataUsed: { totalAsistencias, entradas, salidas },
-      result
-    });
-  } catch (error) {
-    console.error('❌ Error entrenando modelo:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// CONGESTION ALERTS ENDPOINTS
-app.post('/ml/congestion-alerts/configure', async (req, res) => {
-  try {
-    if (!alertSystem) {
-      return res.status(500).json({ error: 'Sistema de alertas no inicializado' });
-    }
-    
-    const { thresholds } = req.body;
-    if (!thresholds) {
-      return res.status(400).json({ error: 'Thresholds requeridos' });
-    }
-    
-    const result = await alertSystem.configureThresholds(thresholds);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/congestion-alerts/check', async (req, res) => {
-  try {
-    if (!alertSystem) {
-      return res.status(500).json({ error: 'Sistema de alertas no inicializado' });
-    }
-    
-    const result = await alertSystem.checkAndGenerateAlerts();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// TRAINING PIPELINE ENDPOINT
-app.post('/ml/pipeline/train', async (req, res) => {
-  try {
-    if (!etlService || !peakModel || !alertSystem) {
-      return res.status(500).json({ error: 'Servicios ML no inicializados completamente' });
-    }
-    
-    console.log('🚀 Iniciando pipeline completo de entrenamiento ML...');
-    
-    // 1. Ejecutar ETL
-    const etlResult = await etlService.runETLPipeline({
-      months: 3,
-      validateData: true,
-      cleanData: true
-    });
-    
-    // 2. Entrenar modelo
-    const trainingResult = await peakModel.trainPeakHoursModel({
-      months: 3,
-      testSize: 0.2
-    });
-    
-    // 3. Verificar alertas
-    const alertCheck = await alertSystem.checkAndGenerateAlerts();
-    
-    const overallAccuracy = trainingResult.metrics.overall.accuracy;
-    const meetsRequirement = overallAccuracy > 0.8;
-    
-    res.json({
-      success: true,
-      pipeline: {
-        etl: {
-          records: etlResult.transform.records,
-          features: etlResult.transform.features
-        },
-        training: {
-          accuracy: overallAccuracy,
-          meetsRequirement: meetsRequirement,
-          metrics: trainingResult.metrics
-        },
-        alerts: {
-          generated: alertCheck.alertsGenerated
-        }
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// WEEKLY UPDATE ENDPOINTS
-app.post('/ml/update/schedule', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const result = await updateService.startScheduler();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/update/schedule/status', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const status = updateService.getSchedulerStatus();
-    res.json({ success: true, status });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/ml/update/schedule/stop', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const result = await updateService.stopScheduler();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/ml/update/weekly', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const result = await updateService.executeManualUpdate();
-    res.json({ success: true, result });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/ml/update/history', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const { limit = 20 } = req.query;
-    const history = updateService.getUpdateHistory(parseInt(limit));
-    res.json({ success: true, history });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/ml/update/configure', async (req, res) => {
-  try {
-    if (!updateService) {
-      return res.status(500).json({ error: 'Servicio de actualización no inicializado' });
-    }
-    
-    const { config } = req.body;
-    if (!config) {
-      return res.status(400).json({ error: 'Configuración requerida' });
-    }
-    
-    const result = await updateService.configureScheduler(config);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ML STATUS ENDPOINT
-app.get('/ml/status', async (req, res) => {
-  try {
-    const status = {
-      services: {
-        etl: !!etlService,
-        peakModel: !!peakModel,
-        alertSystem: !!alertSystem,
-        datasetCollector: !!datasetCollector,
-        updateService: !!updateService
-      },
-      scheduler: updateService ? updateService.getSchedulerStatus() : null,
-      database: {
-        connected: mongoose.connection.readyState === 1,
-        collections: {
-          asistencias: await Asistencia.countDocuments(),
-          alumnos: await Alumno.countDocuments(),
-          usuarios: await User.countDocuments()
-        }
-      },
-      lastUpdated: new Date().toISOString()
-    };
-    
-    res.json({
-      success: true,
-      status: status,
-      message: 'Sistema ML operativo'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Todos los endpoints /ml/* son proxeados al servicio ML Python (ver sección ML PYTHON PROXY arriba)
 
 // Configuración de puerto para Railway
 const PORT = process.env.PORT || 3000;
@@ -3018,12 +2417,7 @@ app.listen(PORT, HOST, async () => {
   console.log(`🚀 Servidor ejecutándose en ${HOST}:${PORT}`);
   console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💾 Base de datos: ${mongoose.connection.readyState === 1 ? 'Conectada' : 'Desconectada'}`);
-  console.log(`🤖 Sistema ML: Endpoints disponibles en /ml/*`);
-  
-  // Inicializar servicios ML después de que el servidor esté en funcionamiento
-  setTimeout(() => {
-    initializeMLServices();
-  }, 2000);
+  console.log(`🤖 Sistema ML: proxy activo hacia ML Python en /ml/*`);
 });
 
 

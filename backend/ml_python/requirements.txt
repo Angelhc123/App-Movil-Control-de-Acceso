@@ -30,6 +30,7 @@ pre-commit==3.3.3       # Git hooks
 python-dotenv==1.0.0    # Variables entorno
 python-multipart==0.0.6 # Form data
 httpx==0.24.1           # HTTP client asíncrono
+structlog==23.1.0       # Structured logging
 
 # 📊 ML Específico
 imbalanced-learn==0.11.0 # Datos desbalanceados

@@ -5,7 +5,8 @@ Application settings and configuration management.
 import os
 from typing import List, Optional, Any, Dict
 from functools import lru_cache
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings
 import logging
 
 logger = logging.getLogger(__name__)

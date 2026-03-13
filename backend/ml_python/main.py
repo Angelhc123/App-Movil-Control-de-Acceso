@@ -15,13 +15,22 @@ from contextlib import asynccontextmanager
 import logging
 
 # Local imports
-from .config.settings import Settings, get_settings
-from .config.logging_config import setup_logging
-from .api.ml_api import ml_router
-from .api.prediction_endpoints import prediction_router
-from .api.monitoring_endpoints import monitoring_router
-from .core.model_manager import ModelManager
-from .automation.scheduler import AutomationScheduler
+try:
+    from .config.settings import Settings, get_settings
+    from .config.logging_config import setup_logging
+    from .api.ml_api import ml_router
+    from .api.prediction_endpoints import prediction_router
+    from .api.monitoring_endpoints import monitoring_router
+    from .core.model_manager import ModelManager
+    from .automation.scheduler import AutomationScheduler
+except ImportError:
+    from config.settings import Settings, get_settings
+    from config.logging_config import setup_logging
+    from api.ml_api import ml_router
+    from api.prediction_endpoints import prediction_router
+    from api.monitoring_endpoints import monitoring_router
+    from core.model_manager import ModelManager
+    from automation.scheduler import AutomationScheduler
 
 # Initialize logging
 logger = logging.getLogger(__name__)

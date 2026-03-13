@@ -15,7 +15,10 @@ import logging
 import shutil
 from pathlib import Path
 
-from ..config.ml_config import MLConfig
+try:
+    from ..config.ml_config import MLConfig
+except ImportError:
+    from config.ml_config import MLConfig
 
 class ModelManager:
     """

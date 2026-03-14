@@ -14,7 +14,7 @@ app.enable('trust proxy');
 const corsOptions = {
   origin: true, // Refleja el origen de la petición (permite todo)
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OSIGUPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 };
 
@@ -1977,6 +1977,7 @@ async function proxyToMlPython(req, res) {
 }
 
 // Intercepta todas las rutas /ml/* y las redirige al servicio ML Python
+// IMPORTANTE: Este middleware debe ir DESPUÉS de las rutas específicas /ml/... definidas arriba
 app.use('/ml', proxyToMlPython);
 
 // 🔍 ENDPOINT 1: Obtener datos históricos para el modelo ML

@@ -1,48 +1,77 @@
-# Miscellaneous
+# --- IDE & Sistema ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
 *.class
 *.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+*.tmp
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# --- Flutter Core & Generated (Archivos Binarios/Temporales) ---
 .dart_tool/
+build/
+.pub-cache/
+.packages
+pubspec.lock
 .flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
 
-# Symbolication related
-app.*.symbols
+# --- Plataformas Flutter (Código autogenerado) ---
+android/
+ios/
+linux/
+macos/
+web/
+windows/
+test/
 
-# Obfuscation related
-app.*.map.json
+# --- Configuración Visual/Linting ---
+analysis_options.yaml
+devtools_options.yaml
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# --- Datos de Usuario / Temporales ---
+fotos/
 
-# MovilesII - Carpeta de referencia (no incluir en repo principal)
-MovilesII/
+# --- Documentación Markdown ---
+# Ignorar todos los MD para limpiar la vista
+*.md
+# EXCEPCIÓN: Mantener visible el README principal
+!README.md
+
+# --- Backend Node.js ---
+node_modules/
+**/node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.env.local
+.env.*.local
+logs/
+coverage/
+
+# --- Backend Python/ML ---
+**/__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+.pytest_cache/
+.coverage
+htmlcov/
+
+pip-log.txt
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Documentación Markdown ---
+# Ignorar todos los MDs excepto el principal
+*.md
+!README.md
+
+# --- Railway/Production Critical Triggers (NO INTERFERIR) ---
+# Se requieren: Dockerfile, railway.toml, package.json, start-backend.sh, backend/*

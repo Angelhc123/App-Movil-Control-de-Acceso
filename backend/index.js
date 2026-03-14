@@ -1976,9 +1976,28 @@ async function proxyToMlPython(req, res) {
   }
 }
 
+// Funciones Helper para ML
+function categorizarHorario(hora) {
+  if (hora >= 6 && hora < 12) return 'mañana';
+  if (hora >= 12 && hora < 16) return 'tarde';
+  if (hora >= 16 && hora < 20) return 'tarde-noche';
+  if (hora >= 20 && hora < 24) return 'noche';
+  return 'madrugada';
+}
+
+function calcularTiempoPromedio(estudiantes) {
+  const ahora = new Date();
+  const tiempos = estudiantes.map(est => {
+    if (!est.hora_entrada) return 0;
+    return (ahora - new Date(est.hora_entrada)) / (1000 * 60 * 60); // en horas
+  }).filter(t => t > 0);
+
+  return tiempos.length > 0 ? tiempos.reduce((a, b) => a + b) / tiempos.length : 0;
+}
+
 // Intercepta todas las rutas /ml/* y las redirige al servicio ML Python
-// IMPORTANTE: Este middleware debe ir DESPUÉS de las rutas específicas /ml/... definidas arriba
-app.use('/ml', proxyToMlPython);
+// IMPORTANTE: Este middleware debe ir DESPUÉS de las rutas específicas /ml/... definidas abajo
+// app.use('/ml', proxyToMlPython); // MOVIDO AL FINAL DEL ARCHIVO PARA EVITAR CONFLICTOS
 
 // 🔍 ENDPOINT 1: Obtener datos históricos para el modelo ML
 app.get('/ml/datos-historicos', async (req, res) => {
@@ -2286,14 +2305,14 @@ app.get('/ml/estado-actual', async (req, res) => {
       contexto: {
         es_hora_pico_salida: horaActual >= 17 && horaActual <= 22,
         es_dia_laboral: diaActual >= 1 && diaActual <= 5,
-        categoria_horario: this.categorizarHorario(horaActual)
+        categoria_horario: categorizarHorario(horaActual)
       },
 
       // Métricas para predicción
       metricas_prediccion: {
         densidad_actual: estudiantesPresentes.length,
         velocidad_salida: salidasUltimaHora.length,
-        tiempo_promedio_permanencia: this.calcularTiempoPromedio(estudiantesPresentes)
+        tiempo_promedio_permanencia: calcularTiempoPromedio(estudiantesPresentes)
       }
     };
 
@@ -2412,7 +2431,8 @@ function calcularTiempoPromedio(estudiantesPresentes) {
 }
 
 // ==================== ENDPOINTS MACHINE LEARNING ====================
-// Todos los endpoints /ml/* son proxeados al servicio ML Python (ver sección ML PYTHON PROXY arriba)
+// IMPORTANTE: Este middleware final captura todas las rutas /ml/... que no fueron manejadas por los endpoints anteriores
+app.use('/ml', proxyToMlPython);
 
 // Configuración de puerto para Railway
 const PORT = process.env.PORT || 3000;

@@ -111,6 +111,9 @@ class Settings(BaseSettings):
         """Normalize list-like env vars and avoid empty host/origin entries."""
         if v is None:
             return ['*']
+        
+        if v == '*':
+            return ['*']
 
         # Handle JSON string values like "[\"*\"]" or "[\"\"]"
         if isinstance(v, str):

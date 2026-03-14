@@ -1,0 +1,371 @@
+
+
+
+
+Agent
+
+
+
+
+
+
+
+
+
+
+
+App-Movil-Control-de-Acceso
+Deployments
+Variables
+Metrics
+Settings
+Filter settings
+Filter Settings...
+
+/
+Source
+Source Repo
+Angelhc123/App-Movil-Control-de-Acceso
+
+
+
+Disconnect
+Root Directory
+Configure where we should look for your code. Docs↗
+Root directory
+/backend/ml_python
+Branch connected to production
+Changes made to this GitHub branch will be automatically pushed to this environment.
+main
+
+Disconnect
+Wait for CI
+Trigger deployments after all GitHub actions have completed successfully.
+
+Networking
+Public Networking
+Access your application over HTTP with the following domains
+app-movil-control-de-acceso-production.up.railway.app
+Port 8000
+
+
+
+
+
+Domain
+app-movil-control-de-acceso-production
+.up.railway.app
+
+Enter the port your app is listening on
+
+Target port
+8000
+Update your domain or target port
+
+
+Cancel
+
+Update
+
+Custom Domain
+
+TCP Proxy
+Private Networking
+Communicate with this service from within the Railway network.
+app-movil-control-de-acceso.railway.internal
+IPv6
+
+
+Ready to talk privately ·
+You can also simply call me
+app-movil-control-de-acceso
+.
+
+DNS
+app-movil-control-de-acceso
+.railway.internal
+
+Endpoint name available!
+
+
+Cancel
+
+Update
+Scale
+Regions & Replicas
+Deploy replicas per region for horizontal scaling.
+US East (Virginia, USA)
+
+Replicas
+1
+Replica
+Multi-region replicas are only available on the Pro plan.
+
+Learn More↗
+Replica Limits
+Allocate a maximum vCPU and Memory for each replica.
+CPU: 8 vCPU
+
+Plan limit: 8 vCPU
+
+Memory: 8 GB
+
+Plan limit: 8 GB
+
+Upgrade for higher limits
+Build
+Builder
+The value is set in
+backend/ml_python/railway.toml
+Open file↗
+
+Dockerfile
+
+Dockerfile
+
+Build with a Dockerfile using BuildKit. Docs↗
+
+Metal Build Environment
+Metal
+
+Use our new Metal-based build environment. The new Metal build environment is faster and will be the default for all builds in the coming months.
+
+
+Watch Paths
+Gitignore-style rules to trigger a new deployment based on what file paths have changed. Docs↗
+Add pattern
+Add pattern e.g. /backend/ml_python/src/**
+
+Deploy
+Custom Start Command
+Command that will be run to start new deployments. Docs↗
+
+Start Command
+Add pre-deploy step (Docs↗)
+Teardown
+Configure old deployment termination when a new one is started. Docs↗
+
+Cron Schedule
+Run the service according to the specified cron schedule.
+
+Add Schedule
+Healthcheck Path
+Endpoint to be called before a deploy completes to ensure the new deployment is live. Docs↗
+
+Healthcheck Path
+Serverless
+Containers will scale down to zero and then scale up based on traffic. Requests while the container is sleeping will be queued and served when the container wakes up. Docs↗
+
+Restart Policy
+Configure what to do when the process exits. Docs↗
+The value is set in
+backend/ml_python/railway.toml
+Open file↗
+On Failure
+
+Restart the container if it exits with a non-zero exit code.
+
+
+Number of times to try and restart the service if it stopped due to an error.
+The value is set in
+backend/ml_python/railway.toml
+Open file↗
+Max restart retries
+10
+Config-as-code
+Railway Config File
+Manage your build and deployment settings through a config file. Docs↗
+
+Add File Path
+Delete Service
+Deleting this service will permanently delete all its deployments and remove it from this environment. This cannot be undone.
+
+Delete service
+
+MONGODB_DATABASE="ASISTENCIA"
+MONGODB_URL="mongodb+srv://Angel:angel12345@cluster0.pas0twe.mongodb.net/ASISTENCIA?retryWrites=true&w=majority&appName=Cluster0"
+MONGODB_DB_NAME="ASISTENCIA"
+ENVIRONMENT="production"
+DEBUG="false"
+HOST="0.0.0.0"
+PORT="8000"
+LOG_LEVEL="INFO"
+ALLOWED_HOSTS="[\"\"]"
+CORS_ORIGINS="[\"\"]"
+SECRET_KEY="clave123"
+REDIS_URL="redis://default:default@redis:6379/0"
+
+
+Acees_Group
+Deployments
+Variables
+Metrics
+Settings
+Filter settings
+Filter Settings...
+
+/
+Source
+Source Repo
+Angelhc123/App-Movil-Control-de-Acceso
+
+
+
+Disconnect
+Add Root Directory (used for build and deploy steps. Docs↗)
+Branch connected to production
+Changes made to this GitHub branch will be automatically pushed to this environment.
+main
+
+Disconnect
+Wait for CI
+Trigger deployments after all GitHub actions have completed successfully.
+
+Networking
+Public Networking
+Access your application over HTTP with the following domains
+aceesgroup-production.up.railway.app
+Port 8080
+
+
+
+
+
+Domain
+aceesgroup-production
+.up.railway.app
+
+Custom port
+Enter the port your app is listening on
+
+Target port
+8080
+Update your domain or target port
+
+
+Cancel
+
+Update
+
+Custom Domain
+
+TCP Proxy
+Private Networking
+Communicate with this service from within the Railway network.
+aceesgroup.railway.internal
+IPv6
+
+
+Ready to talk privately ·
+You can also simply call me
+aceesgroup
+.
+
+DNS
+aceesgroup
+.railway.internal
+
+Endpoint name available!
+
+
+Cancel
+
+Update
+Scale
+Regions & Replicas
+Deploy replicas per region for horizontal scaling.
+US East (Virginia, USA)
+
+Replicas
+1
+Replica
+Multi-region replicas are only available on the Pro plan.
+
+Learn More↗
+Replica Limits
+Allocate a maximum vCPU and Memory for each replica.
+CPU: 8 vCPU
+
+Plan limit: 8 vCPU
+
+Memory: 8 GB
+
+Plan limit: 8 GB
+
+Upgrade for higher limits
+Build
+Builder
+The value is set in
+/railway.toml
+Open file↗
+
+Dockerfile
+
+Dockerfile
+
+Build with a Dockerfile using BuildKit. Docs↗
+
+Metal Build Environment
+Metal
+
+Use our new Metal-based build environment. The new Metal build environment is faster and will be the default for all builds in the coming months.
+
+
+Watch Paths
+Gitignore-style rules to trigger a new deployment based on what file paths have changed. Docs↗
+Add pattern
+Add pattern e.g. /src/**
+
+Deploy
+Custom Start Command
+Command that will be run to start new deployments. Docs↗
+
+Start Command
+Add pre-deploy step (Docs↗)
+Teardown
+Configure old deployment termination when a new one is started. Docs↗
+
+Cron Schedule
+Run the service according to the specified cron schedule.
+
+Add Schedule
+Cron schedules are not available for serverless services.
+Healthcheck Path
+Endpoint to be called before a deploy completes to ensure the new deployment is live. Docs↗
+
+Healthcheck Path
+Serverless
+Containers will scale down to zero and then scale up based on traffic. Requests while the container is sleeping will be queued and served when the container wakes up. Docs↗
+
+Restart Policy
+Configure what to do when the process exits. Docs↗
+The value is set in
+/railway.toml
+Open file↗
+On Failure
+
+Restart the container if it exits with a non-zero exit code.
+
+
+Number of times to try and restart the service if it stopped due to an error.
+The value is set in
+/railway.toml
+Open file↗
+Max restart retries
+10
+Config-as-code
+Railway Config File
+Manage your build and deployment settings through a config file. Docs↗
+
+Add File Path
+Delete Service
+Deleting this service will permanently delete all its deployments and remove it from this environment. This cannot be undone.
+
+Delete service
+
+MONGODB_URI="mongodb+srv://Angel:angel12345@cluster0.pas0twe.mongodb.net/ASISTENCIA?retryWrites=true&w=majority&appName=Cluster0"
+NODE_ENV="production"
+HOST="0.0.0.0"
+PORT="3000"
+ML_PROXY_TIMEOUT_MS="20000"
+ML_PYTHON_BASE_URL="app-movil-control-de-acceso-production.up.railway.app"

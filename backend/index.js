@@ -7,21 +7,15 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// Configuración CORS optimizada para Railway
+// Optimización para Railway (Proxy)
+app.enable('trust proxy');
+
+// Configuración CORS Permisiva para depuración
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://192.168.1.51:3000',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'https://aceesgroup-production.up.railway.app',
-    'https://acees-group-backend-production.up.railway.app',
-    // Permitir cualquier origen en desarrollo
-    ...(process.env.NODE_ENV !== 'production' ? ['*'] : [])
-  ],
+  origin: true, // Refleja el origen de la petición (permite todo)
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
@@ -341,9 +335,15 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
-// Método para comparar contraseñas
+// Método para comparar contraseñas de forma segura
 UserSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!this.password || !candidatePassword) return false;
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (err) {
+    console.error('Error al comparar contraseñas:', err);
+    return false;
+  }
 };
 
 const User = mongoose.model('usuarios', UserSchema);

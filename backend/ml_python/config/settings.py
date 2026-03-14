@@ -112,7 +112,8 @@ class Settings(BaseSettings):
         if v is None:
             return ['*']
         
-        if v == '*':
+        # Handle single asterisk directly even if it's a string
+        if v == '*' or (isinstance(v, str) and v.strip() == "*"):
             return ['*']
 
         # Handle JSON string values like "[\"*\"]" or "[\"\"]"

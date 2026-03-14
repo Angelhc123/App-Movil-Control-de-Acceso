@@ -1,99 +1,85 @@
-# 📱 Acees Group - Sistema de Control de Acceso NFC
+# 📱 Acees Group - Sistema de Control de Acceso NFC + IA
 
-Sistema completo de control de acceso con tecnología NFC desarrollado en Flutter con arquitectura MVVM.
+Sistema integral de gestión de transporte universitario y control de acceso, potenciado por Inteligencia Artificial para la optimización de rutas y horarios.
 
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Estructura del Proyecto (Deploy)
 
-```
-📁 Acees_Group/
-├── 📱 lib/                     # App Flutter (Frontend)
-├── 🌐 backend/                 # API REST (Node.js + Express)
-├── ⚙️ railway.toml            # Configuración Railway
-├── 🚀 start-backend.sh        # Script de desarrollo
-└── 📚 RAILWAY_DEPLOY.md       # Guía de despliegue
-```
+El repositorio contiene el código fuente esencial para el despliegue en producción (Railway) y la compilación de la App Móvil.
 
-## 🚀 Despliegue
-
-### 🌐 Producción (Railway)
-- **URL**: https://acees-group-backend-production.up.railway.app
-- **Documentación**: Ver [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)
-
-### 💻 Desarrollo Local
 ```bash
-# Clonar repositorio
-git clone https://github.com/KrCrimson/Acees_Group.git
-cd Acees_Group
-
-# Iniciar backend
-./start-backend.sh
-
-# Iniciar app Flutter (en otra terminal)
-flutter run
+📁 Acees_Group/
+├── 📱 lib/                     # Frontend: App Flutter (Dart)
+├── 🌐 backend/                 # Backend Unificado
+│   ├── index.js                # API Gateway + auth (Node.js)
+│   ├── ml_python/              # Microservicio IA (Python FastAPI)
+│   └── routes/                 # Rutas Express
+├── 🐳 Dockerfile               # Configuración de Contenedor Híbrido (Node+Python)
+├── ⚙️ railway.toml            # Orquestación de despliegue
+└── 📦 package.json            # Dependencias Backend
 ```
 
-## 📋 Características
+## 🚀 Despliegue en Producción (Railway)
 
-- ✅ **Autenticación segura** con JWT
-- ✅ **Lectura NFC** con manejo de múltiples tags
-- ✅ **Modo offline** con sincronización automática
-- ✅ **Dashboard administrativo** completo
-- ✅ **Gestión de asistencias** en tiempo real
-- ✅ **Reportes y estadísticas** avanzadas
-- ✅ **Arquitectura MVVM** escalable
+El sistema utiliza un **entorno híbrido** donde Node.js y Python conviven en el mismo contenedor para minimizar latencia.
+
+- **URL Base**: `https://app-movil-control-de-acceso-production.up.railway.app`
+- **Estado**: Activo (Production)
+
+### Servicios Integrados
+1.  **API Gateway (Node.js Express):** Maneja autenticación, usuarios y proxy inverso.
+2.  **ML Engine (Python FastAPI):** Procesa predicciones de congestión y horarios óptimos.
+3.  **Base de Datos (MongoDB Atlas):** Almacenamiento centralizado de asistencias y usuarios.
+
+## 📋 Funcionalidades Principales
+
+### 🧑‍🎓 Control de Acceso & Usuarios
+- Autenticación segura vía JWT.
+- Gestión de roles (Admin/Estudiante).
+- Historial de accesos en tiempo real.
+
+### 🤖 Inteligencia Artificial (ML)
+- **Predicción de Horas Pico:** Análisis histórico para evitar aglomeraciones.
+- **Recomendación de Flota:** Cálculo automático de buses necesarios según demanda.
+- **Detección de Anomalías:** Monitoreo de patrones irregulares de asistencia.
+
+### 📱 Aplicación Móvil (Flutter)
+- Arquitectura MVVM (Model-View-ViewModel).
+- Modo Offline con sincronización automática.
+- Visualización de gráficas y reportes predictivos.
 
 ## 🛠️ Tecnologías
 
-### Frontend (Flutter)
-- **Patrón**: MVVM con Provider
-- **Base de datos local**: SQLite
-- **NFC**: flutter_nfc_kit
-- **HTTP**: http package
-- **Estado**: Provider + ChangeNotifier
+| Componente | Tecnología | Uso |
+|------------|------------|-----|
+| **Frontend** | Flutter (Dart) | App iOS/Android |
+| **Backend 1** | Node.js (Express) | API REST, Auth, Proxy |
+| **Backend 2** | Python (FastAPI) | Modelos ML, Pandas, Scikit-learn |
+| **DB** | MongoDB Atlas | Persistencia de datos |
+| **Infra** | Docker + Railway | CI/CD y Alojamiento |
 
-### Backend (Node.js)
-- **Framework**: Express.js
-- **Base de datos**: MongoDB Atlas
-- **Autenticación**: bcrypt
-- **Despliegue**: Railway
-- **CORS**: Configurado para móviles
+## 🔧 Configuración Rápida
 
-## 📡 API Endpoints
+### Requisitos Previos
+- Flutter SDK
+- Node.js 18+
+- Python 3.10+
+- Cuenta en MongoDB Atlas & Railway
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/login` | Autenticación |
-| `GET` | `/alumnos/:codigo` | Buscar alumno |
-| `POST` | `/asistencias` | Registrar asistencia |
-| `GET` | `/asistencias` | Listar asistencias |
+### Variables de Entorno (Producción)
+```env
+# Base de Datos
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/ASISTENCIA
 
-## 🔧 Configuración
-
-### Variables de Entorno (Backend)
-```bash
-MONGODB_URI=mongodb+srv://...
+# Configuración del Servicio
 NODE_ENV=production
 PORT=3000
 HOST=0.0.0.0
+
+# Microservicio ML (Interno)
+PYTHON_SERVICE_URL=http://localhost:8000
 ```
-
-### Configuración Flutter
-```dart
-// lib/config/api_config.dart
-static const String _baseUrlProd = 'https://tu-app.up.railway.app';
-static const bool _isProduction = true;
-```
-
-## 🚀 Inicio Rápido
-
-1. **Clonar** el repositorio
-2. **Backend**: `./start-backend.sh`
-3. **Flutter**: `flutter run`
-4. **Producción**: Ver [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)
 
 ---
 
-**Desarrollado por**: Acees Group  
-**Tecnología**: Flutter + Node.js + MongoDB  
-**Despliegue**: Railway Platform
+**Desarrollado para la gestión eficiente del transporte universitario.**
+© 2026 Acees Group

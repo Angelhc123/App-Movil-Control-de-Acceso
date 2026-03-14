@@ -78,7 +78,8 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Credenciales incorrectas');
       } else {
-        throw Exception('Error en el servidor');
+        // Incluir cuerpo del error para depuración
+        throw Exception('Error en el servidor (${response.statusCode}): ${response.body}');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');

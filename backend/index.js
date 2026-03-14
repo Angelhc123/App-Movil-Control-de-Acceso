@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
@@ -14,6 +14,7 @@ const corsOptions = {
     'http://192.168.1.51:3000',
     'http://localhost:8080',
     'http://127.0.0.1:8080',
+    'https://aceesgroup-production.up.railway.app',
     'https://acees-group-backend-production.up.railway.app',
     // Permitir cualquier origen en desarrollo
     ...(process.env.NODE_ENV !== 'production' ? ['*'] : [])

@@ -51,7 +51,7 @@ class MongoDBConnector:
             True si conexión exitosa
         """
         try:
-            if self._is_connected and self._client:
+            if self._is_connected and self._client is not None:
                 return True
             
             # Parámetros de conexión
@@ -89,7 +89,7 @@ class MongoDBConnector:
     
     async def disconnect(self):
         """Cerrar conexión con MongoDB"""
-        if self._client:
+        if self._client is not None:
             self._client.close()
             self._client = None
             self._database = None
@@ -102,7 +102,7 @@ class MongoDBConnector:
         if not self._is_connected:
             await self.connect()
         
-        if not self._database:
+        if self._database is None:
             raise ConnectionError("No hay conexión activa a MongoDB")
         
         try:
@@ -544,7 +544,7 @@ class MongoDBConnector:
     
     def __del__(self):
         """Cleanup al destruir el objeto"""
-        if self._client:
+        if self._client is not None:
             try:
                 # Programar cierre de conexión
                 if hasattr(asyncio, 'get_running_loop'):

@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = Field(default="ml-python-secret-key-change-in-production", env="SECRET_KEY")
-    ALLOWED_HOSTS: List[str] = Field(default=["*"], env="ALLOWED_HOSTS")
-    CORS_ORIGINS: List[str] = Field(default=["*"], env="CORS_ORIGINS")
+    ALLOWED_HOSTS: Any = Field(default=["*"], env="ALLOWED_HOSTS")
+    CORS_ORIGINS: Any = Field(default=["*"], env="CORS_ORIGINS")
     
     # Database Configuration
     MONGODB_URL: str = Field(default="mongodb://localhost:27017/aceesgroup_ml", env="MONGODB_URL")
